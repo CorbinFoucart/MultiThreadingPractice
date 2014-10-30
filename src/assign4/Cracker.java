@@ -24,7 +24,6 @@ public class Cracker {
 		System.out.println(args[0]);
 		System.out.println(args.length);
 		
-		
 		// Generation mode
 		if (args.length ==1) {
 			 String printHash = generateHash(args[0]);
@@ -44,7 +43,6 @@ public class Cracker {
 			// divide the char string up between threads and initialize them
 			divideLabor();
 			
-			// fire up bessy
 			// start the threads
 			startThreads();
 			
@@ -52,12 +50,15 @@ public class Cracker {
 				printResults();
 			}
 			System.out.println("\n");
-			
 		}
-		
-		
 	}
 	
+	/*
+	 * Helper method that reports the the results 
+	 * of the recursive search. Prints an extra \n
+	 * char because I thought the terminal looked 
+	 * cluttered otherwise.
+	 */
 	public static void printResults() {
 		if (Solutions.isEmpty()) {
 			System.out.println("No solution found. \n");
@@ -66,21 +67,27 @@ public class Cracker {
 				String soln = Solutions.get(i);
 				System.out.println("Solutions found: ");
 				System.out.println(soln);
-				System.out.println("\n");
 			}
+			System.out.println("all done.");
+			System.out.println("\n");
 		}
 		
 	}
 	
+	// simple method to launch a certain number of threads.
 	public static void startThreads() {
 		for (int i = 0; i < numThreads; i++){
 			workers.get(i).run();
 		}
 	}
-	
 	 
+	/*
+	 * Uses a simple iterative method to evenly distribute the character set
+	 * amongst our n worker threads. the remainder is split among the first
+	 * few threads, if the number of threads does not divide the character 
+	 * set length evenly. 
+	 */
 	public static void divideLabor() {
-		
 		// allocate indexes for each worker
 		int spacer = CHARS.length / numThreads;		
 		int remainder = CHARS.length % numThreads;		
@@ -107,7 +114,13 @@ public class Cracker {
 		}
 	}
 	
-	
+	/*
+	 * Our worker class that executes a recursive alphabetical
+	 * search, creating all possible strings in the given alphabetical
+	 * range and checking them against the hashCode ivar.
+	 * 
+	 * See generateCombos for more details.
+	 */
 	public static class crackWorker extends Thread{
 		private int startIndex;
 		private int endIndex;
@@ -117,6 +130,7 @@ public class Cracker {
 			endIndex = end;
 		}
 		
+		// run method
 		public void run() {
 			for (int len = 1; len <= passMaxLength; len++){
 				generateCombos(len, startIndex, endIndex);
@@ -145,6 +159,12 @@ public class Cracker {
 		
 	}
 	
+	/*
+	 * The brains behind the recursive method wrapped by generateCombos().
+	 * If there are no more characters, it knows it has built a complete
+	 * string, which it passes to checkHash in order to generate a hash value
+	 * and check it against our saved HashCode.
+	 */
 	public static void addAllCombos(String previous, int len) {
 		if (len == 0) {
 			if (checkHash(previous)) Solutions.add(previous);
@@ -157,6 +177,11 @@ public class Cracker {
 		}
 	}
 	
+	/*
+	 * Uses the java.security libraries to create a 
+	 * string hash value from an input string using
+	 * SHA algorithm.
+	 */
 	public static String generateHash(String str) {
 		try {
 			 MessageDigest md = MessageDigest.getInstance("SHA");
@@ -170,6 +195,13 @@ public class Cracker {
 		return "";
 	}
 	
+	/*
+	 * Returns a boolean corresponding to whether or not 
+	 * the input string corresponds to our hashCode saved
+	 * as an ivar. Compares the two as byte[]s for speed
+	 * rather than converting and checking the strings
+	 * for equality.
+	 */
 	public static boolean checkHash(String str) {
 		try {
 			 MessageDigest md = MessageDigest.getInstance("SHA");

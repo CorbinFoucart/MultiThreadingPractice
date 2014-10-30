@@ -39,6 +39,7 @@ public class Transaction {
 				&& amt  == other.getAmt());
 	}
 	
+	// ------------------------ getters ----------------------- // 
 	public int getTo() {
 		return to;
 	}

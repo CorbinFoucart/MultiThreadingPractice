@@ -1,13 +1,11 @@
 package assign4;
 
-
 import java.io.*;
 import java.net.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 
 import javax.swing.*;
 
@@ -20,13 +18,14 @@ public class WebWorker implements Runnable {
 	private long t_end;
 	private int bytes;
 	
-	
+	// Constructor 
 	public WebWorker(String urlString, int row, WebFrame frame) {
 		this.urlString = urlString;
 		this.row = row;
 		this.frame = frame;
 	}
 	
+	// Run method for each thread
 	public void run() {
 		t_start = System.currentTimeMillis();
 		frame.threadsRunning++;
@@ -39,17 +38,38 @@ public class WebWorker implements Runnable {
 		checkForFinish();
 	}
 	
+	/*
+	 * Method to update GUI information for the progress bar
+	 * as well as for the "running: " Label. The progress is
+	 * calculated using the CountDownLatch, and the number of 
+	 * running threads is maintained as an ivar of WebFrame. 
+	 * We simply call the GUI update here. 
+	 */
 	public void updateRunning() {
 		frame.running.setText("Running: " + Integer.toString(frame.threadsRunning));
 		int value = frame.tblData.size() - (int) frame.latch.getCount();
 		frame.progBar.setValue(value);
 	}
 	
+	/*
+	 * Method to update the "completed: " label in the GUI.
+	 * Number of threads completed is noted from the countDownLatch,
+	 * and the GUI is updated.
+	 */
 	public void updateComplete() {
 		int value = frame.tblData.size() - (int) frame.latch.getCount();
 		frame.completed.setText("Completed: " + value);
 	}
 	
+	/*
+	 * For every WebWorker thread that runs, we must check that it is 
+	 * the last thread. If this is true, then our work is complete. This 
+	 * method will in the 'finished' case update the GUI to the 'ready'
+	 * state so that another task may be run.
+	 * 
+	 * Additionally, the labels are updated to display the results of 
+	 * the completed run.
+	 */
 	public void checkForFinish(){
 		if (frame.latch.getCount() == 0){
 			frame.single.setEnabled(true);
@@ -63,6 +83,10 @@ public class WebWorker implements Runnable {
 		}
 	}
 
+	/*
+	 * Core download code that attempts to download the information
+	 * present in each URL provided in the text file.
+	 */
 	public void download() {
 	//  This is the core web/download i/o code...
  		InputStream input = null;
@@ -107,9 +131,7 @@ public class WebWorker implements Runnable {
 			updateModel("err: malformed address");
 		}
 		catch(InterruptedException exception) {
-			// YOUR CODE HERE
-			// deal with interruption
-			
+			// deal with interruption			
 			updateModel("interrupted");
 			
 		}
@@ -128,10 +150,12 @@ public class WebWorker implements Runnable {
 		
 	}
 	
+	// Calculate elaped time for this WebWorker
 	public long getElapsed() {
 		return (t_end - t_start);
 	}
 	
+	// Uses Java's Calendar methods to get the time as String
 	public String getTime(){
 		DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 		Calendar cal = Calendar.getInstance();
@@ -139,6 +163,10 @@ public class WebWorker implements Runnable {
 		
 	}
 	
+	/*
+	 * Method that updates our WebTableModel to reflect the changes 
+	 * in the status column.
+	 */
 	public void updateModel(String msg) {
 		frame.tblData.get(row)[1] = msg;
 		frame.model.fireTableDataChanged();

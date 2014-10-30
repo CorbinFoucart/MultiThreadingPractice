@@ -19,7 +19,11 @@ import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
 
-
+/*
+ * Class that represents the WebLoader GUI; this is 
+ * the glue that ties everything together. Webworker threads are created
+ * as necessary from this class to carry out the url downloads
+ */
 public class WebFrame extends JFrame{
 	
 	public static final String FILENAME = "links.txt";
@@ -54,7 +58,7 @@ public class WebFrame extends JFrame{
 	protected ExecutorService service;
 	
 	
-	
+	// WebFrame ctor
 	public WebFrame() {
 		super("WebLoader");
 		threadsRunning = 0;
@@ -63,6 +67,16 @@ public class WebFrame extends JFrame{
 		addActionListeners();
 	}
 	
+	/*
+	 * General method to initialize the GUI. It does
+	 * so by creating a heirarchy of JPanels that are collected
+	 * to form the main three panels of the GUI, the table, the 
+	 * buttons and labels, and the progress bar along with the 
+	 * stop button. 
+	 * 
+	 * Assumes that no threads are yet working during our
+	 * setup. 
+	 */
 	public void initializeGUI() {
 		panel = new JPanel();
 		model = new WebTableModel();
@@ -120,6 +134,16 @@ public class WebFrame extends JFrame{
 		
 	}
 	
+	/*
+	 * Action Listener Methods for each of the buttons with
+	 * which the user can interact. 
+	 * 
+	 * single and concurrent call launch(), which uses an executor
+	 * to coordinate the correct number of threads for the downloads.
+	 * 
+	 * stop interrupts the entire process and returns the GUI to
+	 * the ready state where it may execute another request.
+	 */
 	public void addActionListeners() {
 
 		// Single Thread Button Pressed
@@ -134,12 +158,8 @@ public class WebFrame extends JFrame{
 				stop.setEnabled(true);
 				progBar.setMaximum(tblData.size());
 				
-				
-					
 				int numThreads = 1;
 				launch(numThreads);
-				
-				
 			}	
 		});
 
@@ -157,16 +177,12 @@ public class WebFrame extends JFrame{
 						stop.setEnabled(true);
 						progBar.setMaximum(tblData.size());
 						
-						
-						
 						launch(numThreads);
-						
 						
 					}catch (NumberFormatException ex) {
 						System.out.println("Please enter an integer number of threads.");
 						numThrField.setText("Please enter # threads here");
 					}
-
 			}	
 		});
 
@@ -182,6 +198,11 @@ public class WebFrame extends JFrame{
 		});
 	}
 	
+	/*
+	 * Method to reset our WebTableModel; the urls need 
+	 * not be changed, but the statuses should be cleared 
+	 * preceeding a new run. 
+	 */
 	public void clearData() {
 		for (int i = 0; i < tblData.size(); i++){
 			tblData.get(i)[1] = "";
@@ -193,7 +214,17 @@ public class WebFrame extends JFrame{
 	/**
 	 * 
 	 * Note to the grader: Dr. Young said in lecture that, despite
-	 * the handout, we are allowed to use Executors. 
+	 * the handout, we are allowed to use Executors.
+	 * 
+	 *  Method that uses an executor to handle launching 
+	 *  the correct number of threads to complete the downloads.
+	 *  Each new worker is a new instance of the WebWorker class,
+	 *  which completes its run method to both attempt the URL
+	 *  download and to communicate the process to the GUI, which
+	 *  is thread safe in our invokeLater catch method.
+	 *  
+	 *  The executor shuts down upon completion of all the downloads.
+	 *  
 	 */
 	public void launch(int threads){
 		service = Executors.newFixedThreadPool(threads);
@@ -206,14 +237,16 @@ public class WebFrame extends JFrame{
 			} else {
 				break;
 			}
-			
 		}
 		service.shutdown();
-		
-		
-		
 	}
 	
+	/*
+	 * Our custom extension of AbstractTableModel that provides the
+	 * model part of MVC for the WebLoader program. Here we simply overwrite 
+	 * the table getter methods, referring to the data ivars created
+	 * when we read in the url text file.
+	 */
 	public class WebTableModel extends AbstractTableModel{
 
 		/**
@@ -259,6 +292,13 @@ public class WebFrame extends JFrame{
 		
 	}
 	
+	/*
+	 * Method that uses a BufferedREader to read the url 
+	 * data in the text file into the data instance variables.
+	 * 
+	 *  Throws exceptions if the file is not found, or if there
+	 *  is a problem while reading the file.
+	 */
 	public void readFile() {
 		 FileReader fileReader;
 		try {
@@ -269,8 +309,6 @@ public class WebFrame extends JFrame{
 			 // if no more lines the readLine() returns null
 			 try {
 				while ((line = br.readLine()) != null) {
-				     // DO STUFF HERE
-//					System.out.println(line);
 					String[] row = new String[NUM_COLS];
 					row[0] = line;
 					row[1] = "";
@@ -293,6 +331,10 @@ public class WebFrame extends JFrame{
 	
 	// ----------------------------------- Main Methods ------------------------------ //
 	
+	/*
+	 * General method that initializes and displays the GUI throughout the 
+	 * life of the frame. See IntializeGUI() for details.
+	 */
 	public static void createAndShowGUI() {
 		// GUI Look And Feel
 		try {
@@ -308,7 +350,10 @@ public class WebFrame extends JFrame{
 		frame.setVisible(true);
 	}
 	
-public static void main(String[] args){
+	/*
+	 * Main method, protects the GUI from threading with invokeLater. 
+	 */
+	public static void main(String[] args){
 		
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
